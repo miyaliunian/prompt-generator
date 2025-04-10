@@ -1,0 +1,98 @@
+Create detailed Vue components with these requirements:
+1. Use <script setup> syntax for Composition API components
+2. Style with Scoped CSS or CSS Modules, use :deep() when needed
+3. Use Phosphor Icons (from @phosphor-icons/vue package) for all icons. Do NOT use other UI libraries or their bundled icon sets (like Element Plus icons) unless requested.
+4. Use stock photos from unsplash.com where appropriate, only valid URLs you know exist
+5. Configure Vite image handling to enable stock photos from unsplash.com
+6. Avoid duplicate components and register globally when needed
+7. Follow component folder structure: /components/{base,common,layouts}
+8. Follow proper import practices:
+   - Use @ alias for src directory
+   - Define proper TypeScript interfaces
+   - Keep single-file component structure clean
+   - Include defineProps/defineEmits
+   - You MUST complete the entire component before stopping
+
+<Image-Analysis>
+1. Layout Structure:
+- The overall layout is structured using a grid system to organize information into rows and columns, making it easy to scan.
+- Consistent spacing and alignment are maintained throughout the interface. For example, elements in table cells are visually aligned.
+- There is pagination functionality suggesting it is a design for displaying a large amount of data.
+- The content hierarchy flows from top to bottom with search and filters at the top, the data table in the middle, and pagination at the bottom.
+- **The condition query elements ("查询 (Query)" and "重置 (Reset)" buttons) are located within this top section, specifically positioned in the last row (which is the only row in the 1x3 structure) and aligned to the right.**
+
+2. Components:
+- Text Input Fields: "资源类型 (Resource Type)" and "客户名称/ID (Customer Name/ID)" are text input fields that take user input.
+- Dropdowns: "资源属性 (Resource Attribute)" and "默认展示 (Default Display)" are dropdown menus for selecting options.
+- Buttons: There are two buttons, "查询 (Query)" and "重置 (Reset)", for filtering and resetting the filter.
+- Table: A data table to display the data. The table columns are:
+  - "资源类型 (Resource Type)"
+  - "资源属性 (Resource Attribute)"
+  - "客户ID (Customer ID)"
+  - "客户名称 (Customer Name)"
+  - "行业应用 (Industry Application)"
+  - "应用版本 (Application Version)"
+  - "图标 (Icon)" - which displays a blue arrow icon
+  - "创建人 (Creator)"
+  - "创建时间 (Creation Time)"
+  - "操作 (Operation)"
+- Icons: Small icons are used, such as a blue arrow inside table and edit/delete icons in the "操作" column. These should be implemented using an SVG icon library (Phosphor specified).
+- Pagination: A pagination component is visible at the bottom consisting of links to specific pages (1, 7, 8, 9, 10, 11,..., 52), navigation buttons ("< >", "前往 (Go To)") and a display of the current page and total record number "当前第5/52页 共520条 (Currently on page 5/52, Total 520 records)". There's also a dropdown controlling records per page.
+- Sorting: The "创建时间 (Creation Time)" column header can be clicked suggesting it supports sorting.
+
+3. Visual Design:
+- Color palette:
+  - Primary color: Light Blue (#E6F7FF, #40A9FF (for interactions))
+  - Secondary color: Light Gray (#FAFAFA)
+  - Text color: Dark Gray (#262626, #434343)
+- Typography: The font family appears to be a sans-serif Chinese font. Consistent font sizes are used across components and throughout the table.
+- Shadows and elevation: Subtle shadows differentiate sections.
+- Border styles and corner radiuses: Rounded corners on buttons and input fields is observed. Border sizes are minimal (1px usually).
+- Icons and visual assets: Simple, flat design icons. The arrow icon is a blue color, and the Edit and Delete icons likely adopt a blue and red color scheme respectively when hovered. **Crucially, all icons MUST be SVG-based, sourced from the specified Phosphor Icons library, not from libraries like Element Plus.**
+
+4. Micro-interactions & States:
+- Hover states: Not directly visible but assumed for interactivity over the row edit and delete button options.
+- Active/Selected states: The pagination shows a distinction for which page is selected via a background color.
+- Transitions and animations: Transitions expected for dropdown menus and sorting.
+- Loading states: Not visible in the image.
+- Error states: Not visible in the image.
+
+5. Additional Design Details:
+- Accessibility considerations: Sufficient contrast seems present; consider focus states and alt text for icons for screen reader users.
+- Consistency patterns: Consistent use of typography, spacing, and color palette.
+- Areas for potential improvement: Loading state display for pagination and data load. Ability to sort all table columns instead of only certain ones.
+</Image-Analysis>
+
+<UI-Description>
+1. Layout Overview
+- **Page structure:** The layout employs a grid system, dividing the page into distinct sections: a filter/search area at the top, a data table in the middle, and pagination controls at the bottom. This structure promotes a clear top-to-bottom information flow.
+- **Component hierarchy:** The page is composed of nested components. The top level is a container holding the filter section, the data table, and the pagination component. The filter section contains input fields, dropdowns, and buttons. The data table consists of a header row and multiple data rows. Each data row contains cells with text, icons, and action buttons.
+- **Responsive design considerations:** While not explicitly visible, the design should adapt to different screen sizes. The table might require horizontal scrolling on smaller screens, or columns could be hidden based on priority. The filter section might collapse into an accordion on mobile devices. The pagination component should also adapt to smaller screens, potentially using a more compact representation.
+
+2. Styling Specifications
+- **Color schemes:** The primary color is light blue (#E6F7FF, #40A9FF for interactions). A secondary color is light gray (#FAFAFA). Text colors are dark gray (#262626, #434343). These colors should be defined as CSS variables for easy modification and theming.
+- **Typography:** A sans-serif Chinese font is used. Consistent font sizes are applied across components. Define font sizes and weights using CSS variables or Tailwind CSS configuration (if used).
+- **Spacing and alignment:** Consistent spacing and alignment are maintained throughout the interface. Use CSS grid or flexbox for layout and spacing utilities (e.g., Tailwind's `space-x-*`, `space-y-*`, `gap-*`) to ensure consistent spacing between elements.
+- **Animations and transitions:** Subtle transitions should be used for dropdown menus, sorting indicators, and hover states. Use Vue's `<transition>` component or CSS transitions for smooth animations. Consider using a utility library like GSAP for more complex animations.
+- **Iconography:** Strictly adhere to Guideline #3. Use SVG icons exclusively from the `@phosphor-icons/vue` package for all visual icons (e.g., in table actions, buttons, sorting indicators, decorative elements). **Explicitly avoid using icon fonts or SVG icons bundled with other UI libraries like Element Plus.** Ensure icons are correctly sized and colored according to the design.
+
+3. Interactive Elements
+- **User inputs:**
+    - **Text Input Fields:** Two text input fields ("资源类型 (Resource Type)" and "客户名称/ID (Customer Name/ID)") should use `v-model` for two-way data binding. Implement input validation and error handling.
+    - **Dropdowns:** The "资源属性 (Resource Attribute)" and "默认展示 (Default Display)" dropdowns should use a custom Vue component or a suitable lightweight library compatible with the "no other UI libraries" rule. The selected value should be bound to a data property using `v-model`.
+    - **Buttons:** The "查询 (Query)" and "重置 (Reset)" buttons should use the `@click` directive to trigger the corresponding methods. The "查询 (Query)" button should trigger a data fetch, and the "重置 (Reset)" button should clear the filter values. Positioned right as per layout rules. Buttons may contain Phosphor icons.
+
+- **Navigation:**
+    - **Pagination:** The pagination component should be a custom Vue component or use a lightweight, dependency-free pagination library. The current page and total number of pages should be bound to data properties. The pagination component should emit an event when the user clicks on a page number or navigation button. The "前往 (Go To)" input should validate the input and navigate to the specified page. The records per page dropdown should update the number of records displayed per page. Navigation buttons (<, >) should use appropriate Phosphor icons.
+    - **Sorting:** Clicking the "创建时间 (Creation Time)" column header should toggle the sorting order. Use a data property to store the current sorting column and order. Update the data table when the sorting changes. Use Phosphor icons (e.g., `PhArrowUp`, `PhArrowDown`) to indicate sort direction.
+- **Loading states:** Display a loading indicator (e.g., a spinner using CSS or a Phosphor icon like `PhSpinner`) while the data is being fetched. Use a boolean data property to control the visibility of the loading indicator.
+- **Micro-interactions:**
+    - **Hover states:** Use CSS `:hover` pseudo-class to change the background color or text color of table rows and buttons on hover.
+    - **Active/Selected states:** Use CSS classes to highlight the selected page in the pagination component.
+    - **Edit/Delete Actions:** The "操作" column should contain edit and delete icons (using Phosphor icons like `PhPencilSimple` and `PhTrash`). These icons should trigger corresponding actions (e.g., opening an edit modal or displaying a confirmation dialog). Ensure appropriate hover states for these action icons.
+
+4. Routes
+- No specific routes are visible in the image. However, consider the following:
+    - `/resources`: The main page displaying the resource list.
+    - `/resources/:id/edit`: Route for editing a specific resource (if applicable).
+</UI-Description>

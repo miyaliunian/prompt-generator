@@ -1,0 +1,288 @@
+Okay, let's architect this MCP (Meta Context Prompt) Server using Node.js. As an AI and Frontend Architect, I'll focus on simplicity, maintainability, and scalability for this specific use case.
+
+**Goal:** Create a Node.js server that listens for requests indicating a prompt type (e.g., "PC 端提示词") and returns a predefined, structured prompt template specifically tailored for Cursor image-to-code generation for PC web frontends (Vue.js in this case).
+
+**Core Concept:** The server acts as a simple lookup service. It maps an input key (prompt type) to a static text output (the prompt template).
+
+---
+
+### MCP Server Architecture (Node.js)
+
+**1. Architecture Overview:**
+
+*   **Type:** Simple REST API Server.
+*   **Functionality:** Single endpoint to retrieve prompt templates based on a type identifier.
+*   **Data Storage:** Prompt templates stored as plain text files on the server's file system. This allows easy updates without code changes (just update the file and potentially restart/reload the server).
+*   **Scalability:** Easily extensible by adding more template files and mapping new types in the server logic.
+
+**Diagrammatic Flow:**
+
+```
++-----------------+      +----------------------+      +------------------------+
+| Client (Cursor) | ---->| MCP Server (Node.js) | ---->| File System (Templates)|
+|   (Requests     |      |    (Express.js)      |      |  - pc-web.txt          |
+|   prompt type)  |      |                      |      |  - mobile-web.txt (future)|
++-----------------+      | 1. Receives Request  |      |  - ...                 |
+                       | 2. Identifies Type   |      +-----------^------------+
+                       | 3. Reads Template File |                  |
+                       | 4. Sends Response    |                  | Reads
+                       +----------|-----------+                  |
+                                  |                              |
+                                  V                              |
++-----------------+      +----------------------+                 |
+| Client (Cursor) | <----| MCP Server (Node.js) | <---------------+
+|  (Receives      |      |   (Sends Template)   |
+|   template)     |      +----------------------+
++-----------------+
+```
+
+**2. Technology Stack:**
+
+*   **Runtime:** Node.js (Latest LTS recommended)
+*   **Framework:** Express.js (Mature, simple, excellent ecosystem for building APIs)
+*   **Process Manager (Optional but Recommended):** PM2 (for running the Node.js app in production, handling restarts, logging)
+*   **Environment Variables:** `dotenv` (for managing configuration like port numbers)
+*   **Language:** JavaScript (or TypeScript for better maintainability and type safety, highly recommended if you're comfortable with it)
+
+**3. Project Structure (Example):**
+
+```
+mcp-server/
+├── node_modules/
+├── prompts/                  # Directory to store prompt templates
+│   └── pc-web.txt            # Template for PC Web (using the example provided)
+│   └── mobile-web.txt        # Example for a future template type
+│   └── ...
+├── src/                      # Source code directory (if using TS, otherwise root)
+│   ├── controllers/
+│   │   └── promptController.js # Logic to handle prompt requests
+│   ├── routes/
+│   │   └── promptRoutes.js     # Defines the API endpoints
+│   ├── app.js                # Express app setup, middleware
+│   └── server.js             # Starts the HTTP server
+├── .env                      # Environment variables (PORT, etc.)
+├── .gitignore
+├── package.json
+└── README.md
+```
+
+**4. Core Logic Flow:**
+
+1.  **Server Initialization (`server.js`):**
+    *   Loads environment variables (e.g., `PORT`).
+    *   Imports the `app` instance from `app.js`.
+    *   Starts the HTTP server, listening on the configured port.
+2.  **Express App Setup (`app.js`):**
+    *   Creates an Express application instance.
+    *   Applies necessary middleware:
+        *   `express.json()`: To parse JSON request bodies (if you send the type in the body).
+        *   `cors` (optional): If Cursor makes requests from a different origin.
+        *   Logging middleware (optional).
+    *   Mounts the prompt routes (from `routes/promptRoutes.js`) usually under a base path like `/api`.
+    *   Sets up basic error handling middleware.
+3.  **Routing (`routes/promptRoutes.js`):**
+    *   Defines the API endpoint, e.g., `POST /api/prompts` or `GET /api/prompts/:type`. Let's assume `GET /api/prompts/:type` for simplicity.
+    *   Maps the route to the appropriate controller function (e.g., `promptController.getPromptByType`).
+4.  **Controller Logic (`controllers/promptController.js`):**
+    *   **`getPromptByType(req, res, next)` function:**
+        *   Extracts the `type` from the request parameters (`req.params.type`).
+        *   Validates the `type`.
+        *   Constructs the expected filename based on the type (e.g., `${type}.txt`). Normalize the type to prevent path traversal issues (e.g., ensure it only contains alphanumeric characters and hyphens).
+        *   Constructs the full path to the template file within the `prompts/` directory.
+        *   Uses Node.js's `fs.readFile` (or `fs.promises.readFile`) to read the file content.
+        *   **If file exists:**
+            *   Set the `Content-Type` header to `text/plain`.
+            *   Send the file content as the response body with a 200 OK status.
+        *   **If file doesn't exist or error reading:**
+            *   Send an appropriate error response (e.g., 404 Not Found if the type is unknown, 500 Internal Server Error if there's a reading issue). Use the `next(error)` pattern for centralized error handling.
+
+**5. Template File (`prompts/pc-web.txt`):**
+
+This file will contain the exact text provided in your example:
+
+```text
+提示词  
+###
+1. Use <script setup> syntax for Composition API components
+2. Style with Scoped CSS or CSS Modules, use :deep() when needed
+3. Use Phosphor Icons (from @phosphor-icons/vue package) for all icons. Do NOT use other UI libraries or their bundled icon sets (like Element Plus icons) unless requested.
+4. Use stock photos from unsplash.com where appropriate, only valid URLs you know exist
+5. Configure Vite image handling to enable stock photos from unsplash.com
+6. Avoid duplicate components and register globally when needed
+7. Follow component folder structure: /components/{base,common,layouts}
+8. Follow proper import practices:
+   - Use @ alias for src directory
+   - Define proper TypeScript interfaces
+   - Keep single-file component structure clean
+   - Include defineProps/defineEmits
+   - You MUST complete the entire component before stopping
+
+            """
+<Image-Analysis>
+{{CURSOR_IMAGE_ANALYSIS_PLACEHOLDER}}
+</Image-Analysis>
+"""
+```xml
+<UI-Description>
+{{CURSOR_UI_DESCRIPTION_PLACEHOLDER}}
+</UI-Description>
+```
+
+*(Self-correction: Initially, I just copied the example. It's better to replace the specific image analysis/UI description with clear placeholders like `{{CURSOR_IMAGE_ANALYSIS_PLACEHOLDER}}` and `{{CURSOR_UI_DESCRIPTION_PLACEHOLDER}}`. Cursor would then inject its generated analysis into these placeholders.)*
+
+**Wait, the user provided *two* versions of the prompt template.** The second one seems more refined, especially regarding icons and structure. Let's use the **second version** as the content for `prompts/pc-web.txt`, as it seems to be the desired final output structure.
+
+**Corrected `prompts/pc-web.txt` Content:**
+
+```text
+1. Use <script setup> syntax for Composition API components
+2. Style with Scoped CSS or CSS Modules, use :deep() when needed
+3. Use Phosphor Icons (from @phosphor-icons/vue package) for all icons. Do NOT use other UI libraries or their bundled icon sets (like Element Plus icons) unless requested.
+4. Use stock photos from unsplash.com where appropriate, only valid URLs you know exist
+5. Configure Vite image handling to enable stock photos from unsplash.com
+6. Avoid duplicate components and register globally when needed
+7. Follow component folder structure: /components/{base,common,layouts}
+8. Follow proper import practices:
+   - Use @ alias for src directory
+   - Define proper TypeScript interfaces
+   - Keep single-file component structure clean
+   - Include defineProps/defineEmits
+   - You MUST complete the entire component before stopping
+
+            """
+<Image-Analysis>
+{{CURSOR_IMAGE_ANALYSIS_PLACEHOLDER}}
+</Image-Analysis>
+"""
+```xml
+<UI-Description>
+{{CURSOR_UI_DESCRIPTION_PLACEHOLDER}}
+</UI-Description>
+### 
+```
+*(Note: Added the placeholder markers. Removed the initial "提示词 ###" as it seems redundant if the whole block is the prompt. Adjusted the end marker based on the user's second example.)*
+
+**6. Code Examples (Conceptual):**
+
+*   **`server.js`**
+    ```javascript
+    require('dotenv').config();
+    const http = require('http');
+    const app = require('./src/app');
+    
+    const PORT = process.env.PORT || 3000;
+    const server = http.createServer(app);
+    
+    server.listen(PORT, () => {
+        console.log(`MCP Server listening on port ${PORT}`);
+    });
+    ```
+
+*   **`src/app.js`**
+    ```javascript
+    const express = require('express');
+    const cors = require('cors'); // npm install cors
+    const promptRoutes = require('./routes/promptRoutes');
+    // const { errorHandler } = require('./middleware/errorHandler'); // Example
+    
+    const app = express();
+    
+    // Middleware
+    app.use(cors()); // Configure origins properly in production
+    app.use(express.json()); // If using POST with JSON body
+    
+    // Routes
+    app.use('/api/prompts', promptRoutes);
+    
+    // Basic 404 Handler for routes not found
+    app.use((req, res, next) => {
+        res.status(404).send("Sorry, can't find that!");
+    });
+    
+    // Error Handling Middleware (example)
+    // app.use(errorHandler);
+    
+    module.exports = app;
+    ```
+
+*   **`src/routes/promptRoutes.js`**
+    ```javascript
+    const express = require('express');
+    const promptController = require('../controllers/promptController');
+    const router = express.Router();
+    
+    // GET /api/prompts/pc-web
+    // GET /api/prompts/mobile-web etc.
+    router.get('/:type', promptController.getPromptByType);
+    
+    module.exports = router;
+    ```
+
+*   **`src/controllers/promptController.js`**
+    ```javascript
+    const fs = require('fs').promises; // Use promises API
+    const path = require('path');
+    
+    const promptsDir = path.join(__dirname, '..', '..', 'prompts'); // Navigate up to root, then into prompts
+    
+    const getPromptByType = async (req, res, next) => {
+        const type = req.params.type;
+    
+        // Basic validation/sanitization - prevent accessing unintended files
+        if (!type || !/^[a-zA-Z0-9-]+$/.test(type)) {
+             return res.status(400).send('Invalid prompt type format.');
+        }
+    
+        const filename = `${type}.txt`;
+        const filePath = path.join(promptsDir, filename);
+    
+        try {
+            // Check if file exists securely within the intended directory
+            // Resolve to make sure it's still within promptsDir after normalization
+            const resolvedPath = path.resolve(filePath);
+            if (!resolvedPath.startsWith(path.resolve(promptsDir))) {
+                 console.error(`Attempt to access file outside prompts directory: ${type}`);
+                 return res.status(404).send('Prompt type not found.');
+            }
+    
+            const data = await fs.readFile(filePath, 'utf8');
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.status(200).send(data);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                console.warn(`Prompt type not found: ${type}`);
+                res.status(404).send('Prompt type not found.');
+            } else {
+                console.error(`Error reading prompt file ${filename}:`, error);
+                // Pass to a generic error handler if implemented
+                // next(error);
+                res.status(500).send('Internal server error.');
+            }
+        }
+    };
+    
+    module.exports = {
+        getPromptByType
+    };
+    ```
+
+**7. Configuration (`.env`):**
+
+```
+PORT=3001
+# Add other config variables as needed
+```
+
+**8. Running the Server:**
+
+1.  `npm install express dotenv cors` (install dependencies)
+2.  Create the directory structure and files as described.
+3.  Place the template content into `prompts/pc-web.txt`.
+4.  Run: `node src/server.js` (for development)
+5.  Or using PM2: `npm install -g pm2`, then `pm2 start src/server.js --name mcp-server`
+
+**How Cursor would use it:**
+
+When the user triggers the "generate PC web page from screenshot" action, Cursor (or a Cursor extension/plugin you might build) would make an HTTP GET request to `http://<your-mcp-server-address>:<PORT>/api/prompts/pc-web`. The MCP server responds with the plain text template. Cursor then performs its image analysis, populates the `{{CURSOR_IMAGE_ANALYSIS_PLACEHOLDER}}` and `{{CURSOR_UI_DESCRIPTION_PLACEHOLDER}}` sections, and uses the complete text as the final prompt for its code generation LLM.
+
+This architecture is simple, relies on standard Node.js practices, and is easy to extend by just adding more `.txt` files to the `prompts` directory and calling the corresponding endpoint type.

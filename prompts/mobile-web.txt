@@ -1,0 +1,14 @@
+1. Use Vue 3 Composition API with <script setup> syntax
+2. Style with Scoped CSS or CSS Modules for mobile responsiveness
+3. Use Phosphor Icons (from @phosphor-icons/vue package) for icons
+4. Implement responsive design with media queries and flexible layouts
+5. Use rem units for responsive typography and touch-friendly sizing
+6. Implement touch interactions (swipe, touch) where appropriate
+7. Add viewport meta tags for proper mobile rendering
+8. Consider performance optimizations for mobile devices
+9. Implement offline capabilities when appropriate
+10. Follow proper import practices:
+   - Use @ alias for src directory
+   - Define proper TypeScript interfaces
+   - Keep single-file component structure clean
+   - Include defineProps/defineEmits
