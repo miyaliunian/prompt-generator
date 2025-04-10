@@ -1,10 +1,10 @@
-# MCP Server
+# Prompt Generator MCP Server
 
 Meta Context Prompt Server for Cursor image-to-code generation.
 
 ## Description
 
-这是一个为 Cursor 图像到代码生成多端提示词模板。，可以通过自然语言获取提示模板。
+这是一个为 Cursor 图像到代码生成提供多端提示词模板的服务器。可以通过自然语言获取提示模板，主要支持 PC 端和移动端提示词模板。
 
 ## 什么是 MCP (Model Context Protocol)
 
@@ -19,14 +19,37 @@ MCP 帮助您在 LLM 之上构建代理和复杂工作流程。LLM 经常需要�
 ## Features
 
 - 支持自然语言查询（例如"帮我生成 PC 端提示词"）
+- 提供结构化的提示词模板，包含图像分析（Image-Analysis）和 UI 描述（UI-Description）
+- 支持多种连接方式（HTTP、SSE、本地直连）
+- 可扩展的模板系统，易于添加新的提示词类型
+
+## Project Structure
+
+```
+prompt-generator/
+├── src/                      # 源代码目录
+│   ├── index.js              # 程序入口，负责启动服务器
+│   └── server.js             # 服务器核心代码，实现 MCP 协议和提示词生成逻辑
+├── prompts/                  # 提示词模板目录
+│   ├── pc-web.txt            # PC 端提示词模板
+│   └── mobile-web.txt        # 移动端提示词模板
+├── package.json              # 项目配置和依赖管理
+├── README.md                 # 项目说明文档
+└── MCP Server Architecture   # 服务器架构说明文档
+```
 
 ## Installation
 
 1. 克隆此仓库
 2. 安装依赖:
    ```
-   cd mcp-server
+   cd prompt-generator
    npm install
+   ```
+   或使用 pnpm:
+   ```
+   cd prompt-generator
+   pnpm install
    ```
 3. 创建`.env`文件，内容如下:
    ```
@@ -38,89 +61,45 @@ MCP 帮助您在 LLM 之上构建代理和复杂工作流程。LLM 经常需要�
 ### Development
 
 ```
-cd mcp-server
+# 使用 Node.js 运行
 npm run dev
+
+# 使用命令行模式运行
+npm run dev:cli
 ```
 
 ### Production
 
 ```
-cd mcp-server
 npm start
 ```
 
-Or using PM2:
+或使用 PM2:
 
 ```
-cd mcp-server
 npm install -g pm2
-pm2 start src/server.js --name mcp-server
+pm2 start src/server.js --name prompt-generator
 ```
 
-### 测试界面
+## 服务器实现
 
-启动服务器后，访问 http://localhost:3002 可以看到测试界面。
+本服务器使用 `@modelcontextprotocol/sdk` 实现 MCP 协议，主要由以下组件组成：
 
-## API Endpoints
+1. **PromptGeneratorServer 类**:
 
-### 根据类型获取提示模板
+   - 注册提示词生成工具
+   - 加载提示词模板
+   - 处理客户端连接
 
-```
-GET /api/prompts/:type
-```
+2. **连接方式**:
 
-其中`:type`是提示类型，例如`pc-web`。
+   - **HTTP 连接**: 通过 Express 服务器提供 HTTP API
+   - **SSE 连接**: 提供 Server-Sent Events 连接
+   - **直连模式**: 通过 stdio 直接与 Cursor 连接
 
-### 使用自然语言查询提示模板
-
-#### POST 方式:
-
-```
-POST /api/prompts/query
-Content-Type: application/json
-
-{
-  "query": "帮我生成PC端提示词"
-}
-```
-
-#### GET 方式:
-
-```
-GET /api/prompts/query?query=帮我生成PC端提示词
-```
-
-或
-
-```
-GET /api/prompts/query
-```
-
-(不带参数时默认返回 PC 端提示词)
-
-### SSE 连接
-
-```
-GET /sse
-```
-
-或
-
-```
-GET /api/prompts/sse
-```
-
-客户端可以建立 SSE 连接，然后发送 JSON 格式的消息：
-
-```json
-{ "query": "帮我生成PC端提示词" }
-```
-
-服务器会返回对应的提示模板：
-
-```json
-{ "promptTemplate": "模板内容..." }
-```
+3. **模板管理**:
+   - 提示词模板以文本文件形式存储在 `prompts` 目录
+   - PC 端和移动端提示词模板分别存储在不同文件中
 
 ## 与 Cursor 集成
 
@@ -132,7 +111,7 @@ GET /api/prompts/sse
 {
   "mcpServers": {
     "prompt-generator": {
-      "url": "http://localhost:3002/api/prompts/query"
+      "url": "http://localhost:3002/messages"
     }
   }
 }
@@ -161,40 +140,52 @@ GET /api/prompts/sse
   "mcpServers": {
     "prompt-generation": {
       "command": "node",
-      "args": ["/Users/XXX/XXX/prompt-generator-mcp/src/server.js"] // 修改真实路径
+      "args": ["/path/to/prompt-generator/src/index.js", "--stdio"]
     }
   }
 }
 ```
-
-## MCP 服务器架构
-
-本服务器采用简单的 REST API 架构，主要由以下组件组成：
-
-1. **Express 应用程序** - 处理 HTTP 请求和 SSE 连接
-2. **提示模板存储** - 以文本文件形式存储在 `prompts` 目录
-3. **MCP 服务器实现** - 使用 `@modelcontextprotocol/sdk` 实现标准 MCP 接口
-4. **自然语言映射** - 将自然语言查询映射到对应的提示类型
 
 ## 添加新的提示类型
 
 要添加新的提示类型，请按以下步骤操作:
 
 1. 在`prompts`目录中创建一个新的文本文件。文件名应为提示类型名，扩展名为`.txt`
-2. 更新`src/config/promptMappings.js`文件，添加新的自然语言模式和提示类型映射
+2. 在 `server.js` 中注册新的提示词生成工具，方法是在 `registerTools` 方法中添加新的工具
 
-例如，要添加`mobile-web`提示类型:
+例如，要添加`desktop-app`提示类型:
 
-1. 创建`prompts/mobile-web.txt`文件
-2. 在`promptMappings.js`中添加新的映射，例如:
+1. 创建`prompts/desktop-app.txt`文件
+2. 在`server.js`中添加新的工具:
 
 ```javascript
-{
-  patterns: [
-    '移动端提示词',
-    '帮我生成移动端提示词',
-    'mobile web提示词'
-  ],
-  type: 'mobile-web'
-}
+this.server.tool(
+  "generate_desktop_app_prompt",
+  { request: z.string().optional() },
+  async ({ request }) => {
+    const template = await this.loadPromptTemplate("desktop-app");
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Here's a desktop app prompt template:\n\n${template}`,
+        },
+      ],
+    };
+  }
+);
 ```
+
+## 技术栈
+
+- **运行环境**: Node.js
+- **框架**: Express.js
+- **依赖库**:
+  - `@modelcontextprotocol/sdk`: MCP 协议实现
+  - `cors`: 处理跨域请求
+  - `dotenv`: 环境变量管理
+  - `zod`: 数据验证
+
+## License
+
+ISC
