@@ -8,7 +8,11 @@
     "start": "node src/server.js",
     "dev": "nodemon src/index.js",
     "dev:cli": "nodemon src/index.js --stdio",
-    "mcp inspector": "npx @modelcontextprotocol/inspector && pnpm start"
+    "mcp inspector": "npx @modelcontextprotocol/inspector && pnpm start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,json,md}\"",
+    "prepare": "husky"
   },
   "keywords": [
     "mcp",
@@ -24,8 +28,17 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@eslint/js": "^9.24.0",
     "@modelcontextprotocol/sdk": "^1.9.0",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "nodemon": "^3.0.1",
+    "prettier": "^3.5.3",
     "zod": "^3.24.2"
   },
   "volta": {
