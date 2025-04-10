@@ -12,6 +12,13 @@ Create detailed Vue components with these requirements:
    - Keep single-file component structure clean
    - Include defineProps/defineEmits
    - You MUST complete the entire component before stopping
+9. 使用element-plus 实现页面布局
+10. 优先使用阿里图标库 如果没有的话 再使用svg
+11. 当布局为条件查询时 优先使用栅格布局实现 并且布局为一行三列 
+   - 使用<el-row></el-row> 嵌套 <el-col></el-col>  
+   - 每个<el-row></el-row> 每一栏之间的间隔为10
+   - 条件查询按钮 在最后一行 靠右   
+
 
 <Image-Analysis>
 1. Layout Structure:
