@@ -51,55 +51,10 @@ prompt-generator/
    cd prompt-generator
    pnpm install
    ```
-3. 创建`.env`文件，内容如下:
+3. 本地启动:
    ```
-   PORT=3002
+   pnpm dev
    ```
-
-## Usage
-
-### Development
-
-```
-# 使用 Node.js 运行
-npm run dev
-
-# 使用命令行模式运行
-npm run dev:cli
-```
-
-### Production
-
-```
-npm start
-```
-
-或使用 PM2:
-
-```
-npm install -g pm2
-pm2 start src/server.js --name prompt-generator
-```
-
-## 服务器实现
-
-本服务器使用 `@modelcontextprotocol/sdk` 实现 MCP 协议，主要由以下组件组成：
-
-1. **PromptGeneratorServer 类**:
-
-   - 注册提示词生成工具
-   - 加载提示词模板
-   - 处理客户端连接
-
-2. **连接方式**:
-
-   - **HTTP 连接**: 通过 Express 服务器提供 HTTP API
-   - **SSE 连接**: 提供 Server-Sent Events 连接
-   - **直连模式**: 通过 stdio 直接与 Cursor 连接
-
-3. **模板管理**:
-   - 提示词模板以文本文件形式存储在 `prompts` 目录
-   - PC 端和移动端提示词模板分别存储在不同文件中
 
 ## 与 Cursor 集成
 
@@ -111,36 +66,7 @@ pm2 start src/server.js --name prompt-generator
 {
   "mcpServers": {
     "prompt-generator": {
-      "url": "http://localhost:3002/messages"
-    }
-  }
-}
-```
-
-### 方式 2：SSE 连接（推荐）
-
-在 Cursor 中，配置 MCP 服务器:
-
-```json
-{
-  "mcpServers": {
-    "prompt-generator": {
       "url": "http://localhost:3002/sse"
-    }
-  }
-}
-```
-
-然后，在 Cursor 中输入"帮我生成 PC 端提示词"即可获取提示模板。
-
-### 方法 3: 本地直连
-
-```json
-{
-  "mcpServers": {
-    "prompt-generation": {
-      "command": "node",
-      "args": ["/path/to/prompt-generator/src/index.js", "--stdio"]
     }
   }
 }
@@ -159,21 +85,17 @@ pm2 start src/server.js --name prompt-generator
 2. 在`server.js`中添加新的工具:
 
 ```javascript
-this.server.tool(
-  "generate_desktop_app_prompt",
-  { request: z.string().optional() },
-  async ({ request }) => {
-    const template = await this.loadPromptTemplate("desktop-app");
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Here's a desktop app prompt template:\n\n${template}`,
-        },
-      ],
-    };
+this.server.tool('generate_desktop_app_prompt', { request: z.string().optional() }, async ({ request }) => {
+  const template = await this.loadPromptTemplate('desktop-app')
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `Here's a desktop app prompt template:\n\n${template}`
+      }
+    ]
   }
-);
+})
 ```
 
 ## 技术栈
