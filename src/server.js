@@ -1,81 +1,100 @@
-import {
-  McpServer,
-  ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import express from 'express';
+import { z } from 'zod';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const promptsDir = path.join(__dirname, "..", "prompts");
+const promptsDir = path.join(__dirname, '..', 'prompts');
 
-// Create an MCP server
-const server = new McpServer({
-  name: "prompt-generation",
-  version: "1.0.0",
-});
+export const Logger = {
+  log: (...args) => {},
+  error: (...args) => {},
+};
 
-// Add a PC web prompt generation tool
-server.tool(
-  "generate_pc_prompt",
-  { request: z.string().optional() },
-  async ({ request }) => {
-    const template = await loadPromptTemplate("pc-web");
+export class PromptGeneratorServer {
+  server;
+  sseTransport;
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Here's a PC web prompt template:\n\n${template}`,
-        },
-      ],
-    };
+  constructor() {
+    // create Mcp Server
+    this.server = new McpServer({
+      name: 'prompt-generation',
+      version: '1.0.0',
+    });
+
+    this.registerTools();
   }
-);
 
-// Function to load prompt template
-async function loadPromptTemplate(type) {
-  try {
-    const filePath = path.join(promptsDir, `${type}.txt`);
-    return await fs.promises.readFile(filePath, "utf8");
-  } catch (error) {
-    console.error(`Error loading prompt template: ${error.message}`);
-    return null;
+  registerTools() {
+    // Add a PC web prompt generation tool
+    this.server.tool(
+      'generate_pc_prompt',
+      { request: z.string().optional() },
+      async ({ request }) => {
+        const template = await this.loadPromptTemplate('pc-web');
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Here's a PC web prompt template:\n\n${template}`,
+            },
+          ],
+        };
+      }
+    );
+  }
+
+  async loadPromptTemplate(type) {
+    try {
+      const filePath = path.join(promptsDir, `${type}.txt`);
+      return await fs.promises.readFile(filePath, 'utf8');
+    } catch (error) {
+      console.error(`Error loading prompt template: ${error.message}`);
+      return null;
+    }
+  }
+
+  async connect(transport) {
+    // Logger.log("Connecting to transport...");
+    await this.server.connect(transport);
+    Logger.log = console.log;
+    Logger.error = console.error;
+
+    Logger.log('Server connected and ready to process requests');
+  }
+
+  async startHttpServer(port) {
+    const app = express();
+
+    app.get('/sse', async (req, res) => {
+      console.log('New SSE connection established');
+      this.sseTransport = new SSEServerTransport('/messages', res);
+      await this.server.connect(this.sseTransport);
+    });
+
+    app.post('/messages', async (req, res) => {
+      if (!this.sseTransport) {
+        res.sendStatus(400);
+        return;
+      }
+      await this.sseTransport.handlePostMessage(req, res);
+    });
+
+    Logger.log = console.log;
+    Logger.error = console.error;
+
+    app.listen(port, () => {
+      Logger.log(`HTTP server listening on port ${port}`);
+      Logger.log(`SSE endpoint available at http://localhost:${port}/sse`);
+      Logger.log(
+        `Message endpoint available at http://localhost:${port}/messages`
+      );
+    });
   }
 }
-
-// Add prompt resources
-server.resource(
-  "prompt-template",
-  new ResourceTemplate("prompt-template://{type}", { list: undefined }),
-  async (uri, { type }) => {
-    const template = await loadPromptTemplate(type || "pc-web");
-
-    if (!template) {
-      return {
-        contents: [
-          {
-            uri: uri.href,
-            text: "Prompt template not found.",
-          },
-        ],
-      };
-    }
-
-    return {
-      contents: [
-        {
-          uri: uri.href,
-          text: template,
-        },
-      ],
-    };
-  }
-);
-
-// Start receiving messages on stdin and sending messages on stdout
-const transport = new StdioServerTransport();
-await server.connect(transport);

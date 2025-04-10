@@ -154,6 +154,19 @@ GET /api/prompts/sse
 
 然后，在 Cursor 中输入"帮我生成 PC 端提示词"即可获取提示模板。
 
+### 方法 3: 本地直连
+
+```json
+{
+  "mcpServers": {
+    "prompt-generation": {
+      "command": "node",
+      "args": ["/Users/XXX/XXX/prompt-generator-mcp/src/server.js"] // 修改真实路径
+    }
+  }
+}
+```
+
 ## MCP 服务器架构
 
 本服务器采用简单的 REST API 架构，主要由以下组件组成：
