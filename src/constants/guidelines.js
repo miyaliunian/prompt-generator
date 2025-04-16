@@ -24,8 +24,7 @@ export const PC_GUIDELINES = `
     - **使用 Element Plus 分页组件**：即 <el-pagination>。
     - 包含每页显示数量选项、当前页码、总条目数和导航按钮。
 9. 组件结构：遵循推荐的目录结构，例如 /components/{base,common,layouts}。
-10. 导入规范：使用 @ 别名指向 src 目录，定义清晰的 TypeScript 接口（若使用 TS），保持 SFC（单文件组件）结构清晰，包含 defineProps/defineEmits。
-11. 代码完整性：必须生成完整的组件代码，包括 <template>, <script setup> (或 <script> Options API), 和 <style scoped> 部分。`
+10. 代码完整性：必须生成完整的组件代码，包括 <template>, <script setup> (或 <script> Options API), 和 <style scoped> 部分。`
 
 // App 移动端开发指导原则
 export const APP_GUIDELINES = `

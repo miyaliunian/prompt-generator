@@ -23,6 +23,7 @@ MCP 帮助您在 LLM 之上构建代理和复杂工作流程。LLM 经常需要�
 - 支持多种连接方式（HTTP、SSE、本地直连）
 - 支持多种端（PC Web、移动 App）的提示词生成
 - 模块化的代码结构，易于扩展和维护
+- **支持图像分析与处理**: 接收Cursor截图并基于图像内容生成精准代码提示
 
 ## Project Structure
 
@@ -148,3 +149,31 @@ this.server.tool(
 ## License
 
 ISC
+
+## 如何使用图像功能
+
+Cursor可以通过两种方式传递图像到MPC服务器:
+
+1. **MCP工具调用**:
+
+   - 使用`generate_pc_image_prompt`或`generate_app_image_prompt`工具
+   - 通过`image_data`参数传递Base64编码的图像或Data URL
+
+2. **HTTP端点**:
+   - 直接POST图像文件到`/upload-image`端点
+   - 使用multipart/form-data格式上传文件
+
+## 示例
+
+在Cursor中使用MCP工具调用(示例):
+
+```javascript
+// 调用MCP工具处理图像
+const response = await mcp.tool('generate_pc_image_prompt', {
+  request: '实现一个登录表单',
+  image_data: 'base64EncodedImageData...' // 图像的base64数据
+})
+
+// 使用返回的提示词生成代码
+console.log(response.content[0].text)
+```
