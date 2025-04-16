@@ -12,6 +12,7 @@ import { GoogleGenAI } from '@google/genai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import multer from 'multer'
 import bodyParser from 'body-parser'
+import cors from 'cors'
 
 // 导入常量 - 修复目录导入问题
 import { PC_GUIDELINES, APP_GUIDELINES, DEFAULT_REQUESTS } from './constants/index.js'
@@ -188,6 +189,15 @@ ${guidelines}`
 
   async startHttpServer(port) {
     const app = express()
+
+    // 配置CORS中间件
+    app.use(
+      cors({
+        origin: '*', // 允许所有来源访问，生产环境建议设置为特定域名
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+      })
+    )
 
     // 配置中间件
     app.use(bodyParser.json({ limit: '50mb' })) // 增加限制以支持大型base64图像
