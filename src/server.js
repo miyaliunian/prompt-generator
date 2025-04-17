@@ -113,7 +113,7 @@ export class PromptGeneratorServer {
     // 添加 Gemini 增强的提示词生成工具
     this.server.tool(
       'generate_gemini_enhanced_prompt',
-      { request: z.string().optional(), platform: z.enum(['pc', 'app']).optional() },
+      { request: z.string().optional(), platform: z.enum(['PC', 'APP']).optional() },
       this.createGeminiEnhancedPromptTool()
     )
   }
@@ -123,11 +123,11 @@ export class PromptGeneratorServer {
    * @returns {Function} 生成工具处理函数
    */
   createGeminiEnhancedPromptTool() {
-    return async ({ request, platform = 'pc' }) => {
+    return async ({ request, platform = 'PC' }) => {
       // 根据平台选择相应的指导原则和默认请求
-      const platformType = platform === 'pc' ? 'PC端' : '移动端'
-      const guidelines = platform === 'pc' ? PC_GUIDELINES : APP_GUIDELINES
-      const defaultRequest = platform === 'pc' ? DEFAULT_REQUESTS.pc : DEFAULT_REQUESTS.app
+      const platformType = platform === 'PC' ? 'PC端' : '移动端'
+      const guidelines = platform === 'PC' ? PC_GUIDELINES : APP_GUIDELINES
+      const defaultRequest = platform === 'PC' ? DEFAULT_REQUESTS.pc : DEFAULT_REQUESTS.app
 
       // 构建基础提示词
       const basePrompt = `请根据以下具体需求和通用的${platformType}开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
@@ -253,13 +253,13 @@ ${guidelines}`
         })
 
         // 3. 获取请求中的额外参数
-        const platform = req.body.platform || 'pc'
+        const platform = req.body.platform || 'PC'
         const request = req.body.request || ''
         streamLogger.log('请求参数', { platform, request: request || '(使用默认值)' })
 
         // 3.1 根据平台类型选择相应的指导原则和默认请求
-        const platformType = platform === 'pc' ? 'PC端' : '移动端'
-        const guidelines = (platform === 'pc' ? PC_GUIDELINES : APP_GUIDELINES)
+        const platformType = platform === 'PC' ? 'PC端' : '移动端'
+        const guidelines = (platform === 'PC' ? PC_GUIDELINES : APP_GUIDELINES)
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
 
