@@ -114,7 +114,7 @@ export class PromptGeneratorServer {
     // 添加 Gemini 增强的提示词生成工具
     this.server.tool(
       'generate_gemini_enhanced_prompt',
-      { request: z.string().optional(), platform: z.enum(['pc', 'app']).optional() },
+      { request: z.string().optional(), platform: z.enum(['PC', 'APP']).optional() },
       this.createGeminiEnhancedPromptTool()
     )
   }
@@ -124,11 +124,11 @@ export class PromptGeneratorServer {
    * @returns {Function} 生成工具处理函数
    */
   createGeminiEnhancedPromptTool() {
-    return async ({ request, platform = 'pc' }) => {
+    return async ({ request, platform = 'PC' }) => {
       // 根据平台选择相应的指导原则和默认请求
-      const platformType = platform === 'pc' ? 'PC端' : '移动端'
-      const guidelines = platform === 'pc' ? PC_GUIDELINES : APP_GUIDELINES
-      const defaultRequest = platform === 'pc' ? DEFAULT_REQUESTS.pc : DEFAULT_REQUESTS.app
+      const platformType = platform === 'PC' ? 'PC端' : '移动端'
+      const guidelines = platform === 'PC' ? PC_GUIDELINES : APP_GUIDELINES
+      const defaultRequest = platform === 'PC' ? DEFAULT_REQUESTS.pc : DEFAULT_REQUESTS.app
 
       // 构建基础提示词
       const basePrompt = `请根据以下具体需求和通用的${platformType}开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
@@ -221,17 +221,40 @@ ${guidelines}`
 
     // 添加图像上传端点 (用于直接通过HTTP端点上传图像而非通过MCP协议)
     app.post('/upload-image', upload.single('image'), async (req, res) => {
+      // 设置SSE响应头
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection', 'keep-alive')
+
+      // 创建SSE发送函数
+      const sendSSE = (event, data) => {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+      }
+
       try {
-        Logger.log('====== 开始处理图像上传请求 ======')
+        // 重写Logger方法以支持SSE
+        const streamLogger = {
+          log: (message, data = null) => {
+            Logger.log(message)
+            sendSSE('log', { message, data })
+          },
+          error: (message, error = null) => {
+            Logger.error(message)
+            sendSSE('error', { message, error: error?.message || error })
+          }
+        }
+
+        streamLogger.log('====== 开始处理图像上传请求 ======')
 
         // 1. 验证上传的文件
         if (!req.file) {
-          Logger.error('错误: 没有提供图像文件')
-          return res.status(400).json({ error: '没有提供图像文件' })
+          streamLogger.error('错误: 没有提供图像文件')
+          sendSSE('complete', { error: '没有提供图像文件' })
+          return res.end()
         }
 
         // 2. 记录上传文件信息
-        Logger.log('文件已成功上传:', {
+        streamLogger.log('文件已成功上传', {
           路径: req.file.path,
           文件名: req.file.filename,
           原始文件名: req.file.originalname,
@@ -240,17 +263,20 @@ ${guidelines}`
         })
 
         // 3. 获取请求中的额外参数
-        const platform = req.body.platform || 'pc' // 默认为PC平台
-        const request = req.body.request || '' // 自定义请求描述
-        Logger.log('请求参数:', { platform, request: request || '(使用默认值)' })
+        const platform = req.body.platform || 'PC'
+        const request = req.body.request || ''
+        streamLogger.log('请求参数', { platform, request: request || '(使用默认值)' })
 
         // 3.1 根据平台类型选择相应的指导原则和默认请求
-        const platformType = platform === 'pc' ? 'PC端' : '移动端'
-        const guidelines = platform === 'pc' ? PC_GUIDELINES : APP_GUIDELINES
-        Logger.log(`选择${platformType}平台的指导原则和默认请求`)
+        const platformType = platform === 'PC' ? 'PC端' : '移动端'
+        const guidelines = (platform === 'PC' ? PC_GUIDELINES : APP_GUIDELINES)
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+
+        streamLogger.log(`选择${platformType}平台的指导原则和默认请求`)
 
         // 4. 使用Gemini模型分析图像
-        Logger.log('开始进行图像分析...')
+        streamLogger.log('开始进行图像分析...')
 
         // 4.1 准备图像数据
         const imageParts = [
@@ -261,51 +287,59 @@ ${guidelines}`
             }
           }
         ]
-        Logger.log('图像数据准备完成')
+        streamLogger.log('图像数据准备完成')
 
         // 4.2 初始化Gemini模型
-        Logger.log('初始化Gemini模型...')
+        streamLogger.log('初始化Gemini模型...')
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
         // 4.3 调用API分析图像
-        Logger.log('调用Gemini API分析图像...')
+        streamLogger.log('调用Gemini API分析图像...')
         const generatedContent = await model.generateContent([
           '仅列出用户界面截图中的所有重要元素和功能，以简短中文要点形式直接枚举，不要添加任何开场白或介绍性文字。',
           ...imageParts
         ])
 
         // 4.4 获取分析结果
-        Logger.log('成功获取API响应，处理结果...')
+        streamLogger.log('成功获取API响应，处理结果...')
         const response = await generatedContent.response
         const imageAnalysis = response.text() || '图像分析失败'
-        Logger.log('图像分析完成，结果长度:', imageAnalysis.length)
+        streamLogger.log('图像分析完成', { 结果长度: imageAnalysis.length })
 
         // 5. 构建完整提示词
-        Logger.log('开始构建完整提示词...')
-        const promptText = `请根据以下图像分析结果、${platformType}开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
+        streamLogger.log('开始构建完整提示词...')
+        const promptText = `您是一位在 VSCode 中的专家 AI 编程助手，主要专注于生成清晰、可读的代码。
+        \n请根据以下图像分析结果、${platformType}开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
+        \n### 图像分析结果 (Image Analysis):
+        \n${imageAnalysis}
+        \n### ${platformType}开发指导原则 (General Development Guidelines):
+        \n${guidelines}
+        \n请确保生成的代码是完整的、功能可用的，并严格遵守所有指示。
+        `
+        streamLogger.log('提示词构建完成', { 长度: promptText.length })
 
-        图像分析结果 (Image Analysis):
-        ${imageAnalysis}
-        ${platformType}开发指导原则 (General Development Guidelines):
-        ${guidelines}
-
-        请确保生成的代码是完整的、功能可用的，并严格遵守所有指示。`
-        Logger.log('提示词构建完成，长度:', promptText.length)
-
-        // 6. 返回成功响应
-        Logger.log('准备发送响应...')
-        res.json({
+        // 6. 发送最终结果
+        streamLogger.log('处理完成，发送最终结果')
+        sendSSE('complete', {
           success: true,
           filePath: req.file.path,
           fileName: req.file.filename,
           imageAnalysis: imageAnalysis,
           promptText: promptText
         })
+
+        // 结束响应流
+        res.end()
       } catch (error) {
         // 7. 错误处理
         Logger.error('图像上传处理过程中发生错误:', error)
         Logger.error('错误堆栈:', error.stack)
-        res.status(500).json({ error: '图像上传处理失败', message: error.message })
+        sendSSE('error', {
+          error: '图像上传处理失败',
+          message: error.message,
+          stack: error.stack
+        })
+        res.end()
       }
     })
 
