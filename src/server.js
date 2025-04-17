@@ -236,7 +236,10 @@ ${guidelines}`
 
         // 3.1 根据平台类型选择相应的指导原则和默认请求
         const platformType = platform === 'pc' ? 'PC端' : '移动端'
-        const guidelines = platform === 'pc' ? PC_GUIDELINES : APP_GUIDELINES
+        const guidelines = (platform === 'pc' ? PC_GUIDELINES : APP_GUIDELINES)
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+
         Logger.log(`选择${platformType}平台的指导原则和默认请求`)
 
         // 4. 使用Gemini模型分析图像
@@ -272,14 +275,14 @@ ${guidelines}`
 
         // 5. 构建完整提示词
         Logger.log('开始构建完整提示词...')
-        const promptText = `请根据以下图像分析结果、${platformType}开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
-
-        图像分析结果 (Image Analysis):
-        ${imageAnalysis}
-        ${platformType}开发指导原则 (General Development Guidelines):
-        ${guidelines}
-
-        请确保生成的代码是完整的、功能可用的，并严格遵守所有指示。`
+        const promptText = `您是一位在 VSCode 中的专家 AI 编程助手，主要专注于生成清晰、可读的代码。
+        \n请根据以下图像分析结果、${platformType}开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
+        \n### 图像分析结果 (Image Analysis):
+        \n${imageAnalysis}
+        \n### ${platformType}开发指导原则 (General Development Guidelines):
+        \n${guidelines}
+        \n请确保生成的代码是完整的、功能可用的，并严格遵守所有指示。
+        `
         Logger.log('提示词构建完成，长度:', promptText.length)
 
         // 6. 返回成功响应
