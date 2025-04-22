@@ -17,6 +17,130 @@ import cors from 'cors'
 // 导入常量 - 修复目录导入问题
 import { PC_GUIDELINES, APP_GUIDELINES, DEFAULT_REQUESTS } from './constants/index.js'
 
+// Element Plus组件映射关系
+const ELEMENT_PLUS_MAPPINGS = {
+  // 基础组件
+  按钮: { name: 'el-button', importance: 'critical', description: '用于触发操作的按钮组件' },
+  图标: { name: 'el-icon', importance: 'important', description: '显示图标的组件' },
+  链接: { name: 'el-link', importance: 'optional', description: '文字链接组件' },
+
+  // 表单组件
+  输入框: { name: 'el-input', importance: 'critical', description: '文本输入框组件' },
+  文本框: { name: 'el-input', importance: 'critical', description: '文本输入框组件' },
+  搜索框: {
+    name: 'el-input',
+    importance: 'important',
+    description: "带搜索图标的输入框，通常设置suffix-icon='Search'"
+  },
+  数字输入框: { name: 'el-input-number', importance: 'important', description: '数字输入框组件' },
+  下拉框: { name: 'el-select', importance: 'critical', description: '下拉选择框组件' },
+  下拉选择: { name: 'el-select', importance: 'critical', description: '下拉选择框组件' },
+  选择器: { name: 'el-select', importance: 'critical', description: '下拉选择框组件' },
+  下拉菜单: { name: 'el-dropdown', importance: 'important', description: '下拉菜单组件，用于显示更多操作' },
+  复选框: { name: 'el-checkbox', importance: 'important', description: '复选框组件' },
+  单选框: { name: 'el-radio', importance: 'important', description: '单选框组件' },
+  开关: { name: 'el-switch', importance: 'important', description: '开关组件' },
+  滑块: { name: 'el-slider', importance: 'optional', description: '滑块组件' },
+  时间选择器: { name: 'el-time-picker', importance: 'optional', description: '时间选择器组件' },
+  日期选择器: { name: 'el-date-picker', importance: 'important', description: '日期选择器组件' },
+  日期范围选择器: { name: 'el-date-picker', importance: 'important', description: "设置type='daterange'的日期选择器" },
+  级联选择器: { name: 'el-cascader', importance: 'optional', description: '级联选择器组件' },
+  上传: { name: 'el-upload', importance: 'optional', description: '文件上传组件' },
+  颜色选择器: { name: 'el-color-picker', importance: 'optional', description: '颜色选择器组件' },
+  表单: { name: 'el-form', importance: 'critical', description: '表单容器组件，用于包含各种表单元素' },
+
+  // 数据展示组件
+  表格: { name: 'el-table', importance: 'critical', description: '表格组件，用于展示数据' },
+  数据表格: { name: 'el-table', importance: 'critical', description: '表格组件，用于展示数据' },
+  表: { name: 'el-table', importance: 'critical', description: '表格组件，用于展示数据' },
+  数据表: { name: 'el-table', importance: 'critical', description: '表格组件，用于展示数据' },
+  表头: { name: 'el-table-column', importance: 'critical', description: '表格列组件，用于定义表格的列' },
+  表格列: { name: 'el-table-column', importance: 'critical', description: '表格列组件，用于定义表格的列' },
+  分页: { name: 'el-pagination', importance: 'critical', description: '分页组件，用于数据分页展示' },
+  分页器: { name: 'el-pagination', importance: 'critical', description: '分页组件，用于数据分页展示' },
+  标签: { name: 'el-tag', importance: 'important', description: '标签组件，用于标记和选择' },
+  标签页: { name: 'el-tabs', importance: 'important', description: '标签页组件，用于分隔内容区域' },
+  选项卡: { name: 'el-tabs', importance: 'important', description: '标签页组件，用于分隔内容区域' },
+  进度条: { name: 'el-progress', importance: 'optional', description: '进度条组件，用于展示进度' },
+  树: { name: 'el-tree', importance: 'optional', description: '树形控件，用于展示层级结构数据' },
+  树形控件: { name: 'el-tree', importance: 'optional', description: '树形控件，用于展示层级结构数据' },
+
+  // 导航组件
+  菜单: { name: 'el-menu', importance: 'important', description: '导航菜单组件' },
+  导航菜单: { name: 'el-menu', importance: 'important', description: '导航菜单组件' },
+  面包屑: { name: 'el-breadcrumb', importance: 'optional', description: '面包屑导航组件' },
+  面包屑导航: { name: 'el-breadcrumb', importance: 'optional', description: '面包屑导航组件' },
+  页头: { name: 'el-page-header', importance: 'optional', description: '页头组件，含有返回按钮、标题等' },
+  头部: { name: 'el-header', importance: 'important', description: '布局头部容器组件' },
+  步骤条: { name: 'el-steps', importance: 'optional', description: '步骤条组件，引导用户完成流程' },
+
+  // 反馈组件
+  对话框: { name: 'el-dialog', importance: 'important', description: '对话框组件，用于展示信息或操作' },
+  弹窗: { name: 'el-dialog', importance: 'important', description: '对话框组件，用于展示信息或操作' },
+  弹出框: { name: 'el-dialog', importance: 'important', description: '对话框组件，用于展示信息或操作' },
+  提示: { name: 'el-tooltip', importance: 'important', description: '文字提示组件，鼠标悬停时显示' },
+  气泡提示: { name: 'el-popover', importance: 'optional', description: '气泡卡片组件，可包含更复杂内容' },
+  警告: { name: 'el-alert', importance: 'optional', description: '警告提示组件' },
+  加载中: { name: 'el-loading', importance: 'important', description: '加载中指示器组件' },
+  消息提示: { name: 'ElMessage', importance: 'important', description: '消息提示函数，非组件形式使用' },
+  通知: { name: 'ElNotification', importance: 'optional', description: '通知提示函数，非组件形式使用' },
+
+  // 布局组件
+  容器: { name: 'el-container', importance: 'critical', description: '外层容器组件' },
+  布局: { name: 'el-container', importance: 'critical', description: '外层容器组件' },
+  行: { name: 'el-row', importance: 'critical', description: '行组件，配合el-col使用' },
+  列布局: { name: 'el-col', importance: 'critical', description: '列组件，配合el-row使用' },
+  栅格: { name: 'el-row/el-col', importance: 'critical', description: '栅格布局组件，包含行和列' },
+  分割线: { name: 'el-divider', importance: 'optional', description: '分割线组件' },
+  卡片: { name: 'el-card', importance: 'important', description: '卡片组件，用于信息展示' },
+  侧边栏: { name: 'el-aside', importance: 'important', description: '侧边栏容器组件' },
+  主体: { name: 'el-main', importance: 'important', description: '主体内容容器组件' },
+  底部: { name: 'el-footer', importance: 'optional', description: '底部容器组件' },
+
+  // 图表相关
+  折线图: { name: 'echarts', importance: 'important', description: '使用ECharts库绘制折线图，需额外引入' },
+  柱状图: { name: 'echarts', importance: 'important', description: '使用ECharts库绘制柱状图，需额外引入' },
+  饼图: { name: 'echarts', importance: 'important', description: '使用ECharts库绘制饼图，需额外引入' },
+  环形图: { name: 'echarts', importance: 'important', description: '使用ECharts库绘制环形图，需额外引入' },
+  仪表盘: { name: 'echarts', importance: 'optional', description: '使用ECharts库绘制仪表盘，需额外引入' },
+  散点图: { name: 'echarts', importance: 'optional', description: '使用ECharts库绘制散点图，需额外引入' },
+  热力图: { name: 'echarts', importance: 'optional', description: '使用ECharts库绘制热力图，需额外引入' },
+  地图: { name: 'echarts', importance: 'optional', description: '使用ECharts库绘制地图，需额外引入' }
+}
+
+// Element Plus组件筛选提示词
+export const FILTER_COMPONENTS = `<requirement>
+As a web UI expert, analyze the provided UI description thoroughly and identify ONLY the specific components and charts from Element Plus library absolutely necessary to implement the described interface.
+
+Your analysis should:
+1. Consider the exact functional requirements in the description
+2. Identify the minimum set of Element Plus components needed
+3. Exclude components that might be nice-to-have but aren't essential
+4. Justify each component's selection with a brief reason tied to the requirements
+5. Consider performance and maintainability implications
+6. Reference documentation at: https://element.eleme.io/#/zh-CN/component/installation
+
+I will use your precise component selection to read documentation and implement the UI.
+</requirement>
+<response_format>
+{
+  "components": [
+    {
+      "name": "string",
+      "necessity": "critical|important|optional",
+      "justification": "string"
+    }
+  ],
+  "charts": [
+    {
+      "name": "string", 
+      "necessity": "critical|important|optional",
+      "justification": "string"
+    }
+  ]
+}
+</response_format>`
+
 // 加载环境变量
 dotenv.config()
 
@@ -333,15 +457,126 @@ ${guidelines}`
         const imageAnalysis = response.text() || '图像分析失败'
         streamLogger.log('图像分析完成', { 结果长度: imageAnalysis.length })
 
+        // 4.5 筛选Element Plus组件
+        streamLogger.log('开始筛选Element Plus组件...')
+        let componentSuggestions = null
+        try {
+          // 使用本地映射而非API调用
+          const keywords = [
+            // 基础UI元素关键词
+            '按钮',
+            '输入框',
+            '文本框',
+            '搜索框',
+            '下拉框',
+            '下拉选择',
+            '选择器',
+            '表格',
+            '表',
+            '分页',
+            '标签',
+            '菜单',
+            '对话框',
+            '弹窗',
+            '提示',
+            '布局',
+            '容器',
+            '卡片',
+
+            // 数据展示关键词
+            '折线图',
+            '柱状图',
+            '饼图',
+            '环形图',
+            '统计',
+            '数据表',
+            '列表',
+
+            // 交互元素关键词
+            '上传',
+            '开关',
+            '复选框',
+            '单选框',
+            '滑块',
+            '日期',
+            '时间'
+          ]
+
+          // 从分析结果中提取相关组件
+          const identifiedComponents = {
+            components: [],
+            charts: []
+          }
+
+          // 扫描分析文本中的关键词
+          for (const keyword of keywords) {
+            if (imageAnalysis.includes(keyword) && ELEMENT_PLUS_MAPPINGS[keyword]) {
+              const component = ELEMENT_PLUS_MAPPINGS[keyword]
+
+              // 避免重复添加
+              const isChartComponent = component.name === 'echarts'
+              const targetArray = isChartComponent ? identifiedComponents.charts : identifiedComponents.components
+
+              if (!targetArray.some((item) => item.name === component.name)) {
+                targetArray.push({
+                  name: component.name,
+                  necessity: component.importance,
+                  justification: `界面分析中包含"${keyword}"，需要使用${component.description}`
+                })
+              }
+            }
+          }
+
+          // 添加必要的布局组件
+          if (!identifiedComponents.components.some((item) => item.name === 'el-container')) {
+            identifiedComponents.components.push({
+              name: 'el-container',
+              necessity: 'critical',
+              justification: '作为整体页面的容器，包含所有其他组件'
+            })
+          }
+
+          if (!identifiedComponents.components.some((item) => item.name === 'el-row' || item.name === 'el-col')) {
+            identifiedComponents.components.push({
+              name: 'el-row',
+              necessity: 'critical',
+              justification: '用于行级布局，配合el-col使用'
+            })
+            identifiedComponents.components.push({
+              name: 'el-col',
+              necessity: 'critical',
+              justification: '用于列级布局，配合el-row使用'
+            })
+          }
+
+          componentSuggestions = JSON.stringify(identifiedComponents, null, 2)
+          streamLogger.log('Element Plus组件筛选完成', { 结果长度: componentSuggestions.length })
+        } catch (error) {
+          streamLogger.error('组件筛选过程中发生错误:', error)
+          componentSuggestions = '组件筛选失败: ' + error.message
+        }
+
         // 5. 构建完整提示词
         streamLogger.log('开始构建完整提示词...')
-        const promptText = `请根据以下界面分析和开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
+        const promptText = `请根据以下界面分析、Element Plus组件建议和开发指导原则，生成一个完整的 Vue 单文件组件 (.vue)。
+
+### 界面分析 (Interface Analysis):
 ${imageAnalysis}
+
+### Element Plus组件建议 (Component Recommendations):
+${componentSuggestions}
 
 ### ${platformType}开发指导原则 (General Development Guidelines):
 ${guidelines}
 
-请确保生成的代码是完整的、功能可用的，并严格遵守所有指示。
+请使用 Element Plus 组件库实现此界面，确保生成的代码是完整的、功能可用的，并严格遵守以下要求：
+1. 使用Vue 3和Composition API（setup语法糖）
+2. 引入并注册所有必要的Element Plus组件
+3. 遵循Element Plus组件的使用规范
+4. 添加必要的交互逻辑（表单验证、数据筛选、分页等）
+5. 使用响应式设计确保界面在不同屏幕尺寸下正常显示
+6. 代码结构清晰，添加必要的注释
+7. 所有文本保持中英文对照
 `
         streamLogger.log('提示词构建完成', { 长度: promptText.length })
 
